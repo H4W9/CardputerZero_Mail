@@ -1,0 +1,6 @@
+#!/bin/sh
+# APPLaunch wrapper (Exec=bin/czmail). APPLaunch runs apps as root, so the
+# account file lives at /root/.config/czmail/config.json.
+APP_DIR=/usr/share/APPLaunch/apps/czmail
+cd "$APP_DIR" || exit 1
+exec python3 -m czmail "$@"

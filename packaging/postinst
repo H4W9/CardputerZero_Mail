@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+# Let the default user open the framebuffer and keyboard if run outside APPLaunch.
+for grp in video input; do
+    if getent group "$grp" >/dev/null && id -u pi >/dev/null 2>&1; then
+        usermod -aG "$grp" pi || true
+    fi
+done
+if command -v systemctl >/dev/null 2>&1; then
+    systemctl try-restart APPLaunch.service >/dev/null 2>&1 || true
+fi
+exit 0

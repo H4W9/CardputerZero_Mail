@@ -1,0 +1,35 @@
+{
+  "package_name": "czmail",
+  "version": "0.3.3",
+  "app_name": "Email",
+  "bin_name": "czmail",
+  "description": "Email client for the Cardputer Zero",
+  "runtime": "legacy-deb-only",
+  "caps": ["keyboard", "network", "filesystem"],
+  "store": {
+    "summary": "Read and send email from your Cardputer Zero. Works with Gmail, Outlook and more",
+    "description": "Check your inbox, read, reply, forward and write new emails right on the Cardputer.\n\nWorks with any IMAP account. Gmail, Outlook, Yahoo, iCloud and Fastmail settings fill in by themselves when you type your address. Gmail and most big providers need an app password.\n\nWhat it can do:\n- Inbox, folders and search\n- Reply, reply all, forward\n- Contact suggestions from people you've emailed\n- Text only or full view with pictures\n- Save attachments and pictures to Downloads\n- Open links in a simple text browser, or as a QR code for your phone\n- Optional voice typing that works offline\n\nPress Fn+H on any screen for the keys.",
+    "categories": ["Creative & Office"],
+    "screenshots": [
+      "store/screenshots/inbox.png",
+      "store/screenshots/reader-full.png",
+      "store/screenshots/compose.png",
+      "store/screenshots/attachments.png",
+      "store/screenshots/setup.png"
+    ],
+    "icon": "store/icon.png",
+    "license": "MIT",
+    "source_repo": "https://github.com/H4W9/CardputerZero_Mail",
+    "author": { "github": "H4W9", "display_name": "H4W9" },
+    "share_code": "MAIL",
+    "permissions": {
+      "camera": false,
+      "microphone": true,
+      "imu": false,
+      "network": true,
+      "additional_hardware": false,
+      "background_service": false,
+      "external_display": false
+    }
+  }
+}
