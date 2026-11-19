@@ -10,7 +10,7 @@ import ssl
 from email import policy
 from email.message import EmailMessage
 from email.parser import BytesParser
-from email.utils import (formataddr, formatdate, getaddresses, make_msgid,
+from email.utils import (formataddr, formatdate, make_msgid,
                          parseaddr, parsedate_to_datetime)
 from html.parser import HTMLParser
 import io
@@ -1216,8 +1216,10 @@ def build_message(acct, to, cc, subject, body, in_reply_to="", references=""):
     msg = EmailMessage()
     sender = acct["email"].strip()
     msg["From"] = formataddr((acct.get("name") or "", sender)) if acct.get("name") else sender
+    to = ", ".join(split_recipients(to))   # drop the trailing ", " a picked contact leaves
+    cc = ", ".join(split_recipients(cc))
     msg["To"] = to
-    if cc.strip():
+    if cc:
         msg["Cc"] = cc
     msg["Subject"] = subject
     msg["Date"] = formatdate(localtime=True)
@@ -1229,6 +1231,22 @@ def build_message(acct, to, cc, subject, body, in_reply_to="", references=""):
     msg["User-Agent"] = "CZ Email (Cardputer Zero)"
     msg.set_content(body)
     return msg
+
+
+def getaddresses(values):
+    """[(name, addr)] from header/field strings, one address at a time.
+
+    Python 3.13+ made email.utils.getaddresses strict: one empty entry (an
+    empty Cc, a trailing comma) makes it return nothing at all. Splitting
+    first and parsing each address on its own avoids that.
+    """
+    out = []
+    for value in values:
+        for token in split_recipients(str(value or "")):
+            name, addr = parseaddr(token)
+            if addr:
+                out.append((name, addr))
+    return out
 
 
 def recipients(to, cc=""):

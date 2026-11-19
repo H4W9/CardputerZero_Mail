@@ -1,6 +1,6 @@
 {
   "package_name": "czmail",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "app_name": "Email",
   "bin_name": "czmail",
   "description": "Email client for the Cardputer Zero",

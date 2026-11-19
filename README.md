@@ -22,7 +22,7 @@ Press Fn+H on any screen to see its keys.
 Grab the .deb from the releases page (or the App Store once it's listed), copy it to the Cardputer and run:
 
 ```bash
-sudo apt install ./czmail_0.3.3-m5stack1_all.deb
+sudo apt install ./czmail_0.3.4-m5stack1_all.deb
 ```
 
 The app shows up in the launcher. The first time you open it, enter your email address and password. Server settings fill in by themselves for Gmail, Outlook, Yahoo, iCloud, Fastmail, GMX, AOL and Zoho. For anything else, type in your IMAP and SMTP servers.

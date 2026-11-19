@@ -60,6 +60,47 @@ class RecipientTests(unittest.TestCase):
         self.assertFalse(mailer.is_address("jamie"))
         self.assertFalse(mailer.is_address("jamie@localhost"))
 
+    def test_strict_parser_cases(self):
+        # Python 3.13+ getaddresses() gives up on empty entries; ours must not.
+        self.assertEqual(mailer.recipients("Jamie <jamie@example.org>, ", ""),
+                         ["jamie@example.org"])
+        self.assertEqual(mailer.getaddresses(['"Doe, J" <j@x.org>, b@c.de', ""]),
+                         [("Doe, J", "j@x.org"), ("", "b@c.de")])
+        m = mailer.Message(1)
+        m.sender, m.to, m.cc, m.subject = "A <a@x.org>", "me@x.org, B <b@x.org>", "", "Hi"
+        to, cc, _, _ = mailer.reply_fields({"email": "me@x.org"}, m, reply_all=True)
+        self.assertEqual(cc, "B <b@x.org>")                 # empty Cc no longer drops B
+        msg = mailer.build_message({"email": "me@x.org"}, "Jamie <jamie@example.org>, ", "",
+                                   "s", "b")
+        self.assertEqual(msg["To"], "Jamie <jamie@example.org>")
+        self.assertIsNone(msg["Cc"])
+
+    def test_pick_suggestion_then_send(self):
+        from czmail.demo import make_demo_app
+        sent = []
+        app = make_demo_app()
+        app.send_fn = lambda a, m, test_only=False: sent.append(m)
+        for _ in range(60):
+            pump(app, 0.02)
+            if not app.pending and len(app.contacts):
+                break
+
+        def key(k=None, ch=None, ctrl=False):
+            app.handle_key(Key(True, key=k, char=ch, ctrl=ctrl))
+            app.handle_key(Key(False, key=k, char=ch, ctrl=ctrl))
+
+        key(ch="c")
+        for ch in "jam":
+            key(ch=ch)
+        key("enter")                                        # pick from the suggestion list
+        key(ch="s", ctrl=True)
+        for _ in range(40):
+            pump(app, 0.02)
+            if sent:
+                break
+        self.assertEqual(len(sent), 1, app.toast_msg)
+        self.assertEqual(sent[0]["To"], "Jamie Rivera <jamie@example.org>")
+
     def test_compose_resolves_names(self):
         from czmail.app import ComposeScreen, ContactsScreen
         from czmail.demo import make_demo_app
