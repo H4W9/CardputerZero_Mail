@@ -1,3 +1,5 @@
+[![Build](https://github.com/H4W9/CardputerZero_Mail/actions/workflows/build.yml/badge.svg)](https://github.com/H4W9/CardputerZero_Mail/actions/workflows/build.yml)
+
 # Email for Cardputer Zero
 
 An email app for the M5Stack Cardputer Zero. Shows up in the launcher as Email.
@@ -20,7 +22,7 @@ Press Fn+H on any screen to see its keys.
 
 ## Install
 
-Grab the .deb from the releases page (or the App Store once it's listed), copy it to the Cardputer and run:
+Grab the .deb from [Releases](https://github.com/H4W9/CardputerZero_Mail/releases) (or the App Store once it's listed), copy it to the Cardputer and run:
 
 ```bash
 sudo apt install ./czmail_0.4.1-m5stack1_all.deb
@@ -78,6 +80,8 @@ python -m unittest discover -s tests      # tests
 ```
 
 It also builds with the CardputerZero AppBuilder (packaging/meta.env, build.sh, stage.sh).
+
+GitHub Actions runs the tests and builds the .deb on every push (download it from the run's artifacts). To make a release, bump the version in `packaging/meta.env`, `czmail/__init__.py` and `app-builder.json`, then push a tag `v<version>`, or run the Build workflow by hand with "Draft a release" ticked. Either way you get a draft release with the .deb attached, to check and publish.
 
 ## License
 
