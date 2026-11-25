@@ -16,8 +16,21 @@ def main(argv=None):
                    help="download and decode one image, print what happened")
     p.add_argument("--keytest", action="store_true",
                    help="print what the keyboard sends (run over SSH, press keys on the device)")
+    p.add_argument("--ext", action="store_true",
+                   help="use the 320x240 EXT display layout (desktop preview, screenshots)")
     p.add_argument("--version", action="version", version=__version__)
     args = p.parse_args(argv)
+
+    # The screen size has to be known before app/display are imported.
+    from . import ui
+    ext_path = None
+    if args.ext:
+        ui.set_size(320, 240)
+    elif not args.window and not args.screenshots:
+        from . import config, extdisplay
+        ext_path = extdisplay.choose(config.load().get("screen", "auto"))
+        if ext_path:
+            ui.set_size(extdisplay.EXT_W, extdisplay.EXT_H)
 
     if args.image_test:
         return image_test(args.image_test)
@@ -50,7 +63,7 @@ def main(argv=None):
     if args.window or not device_available():
         run_desktop(app, scale=args.scale)
     else:
-        run_device(app)
+        run_device(app, ext_path=ext_path)
     return 0
 
 

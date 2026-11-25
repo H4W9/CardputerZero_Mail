@@ -6,10 +6,12 @@ import os
 import glob
 
 FIELDS = ("name", "email", "username", "password", "imap_host", "imap_port",
-          "smtp_host", "smtp_port", "view_mode", "remote_images", "download_dir")
+          "smtp_host", "smtp_port", "view_mode", "remote_images", "download_dir",
+          "screen")
 
 VIEW_MODES = ("text", "full")       # text only / formatted with images
 ON_OFF = ("off", "on")
+SCREENS = ("auto", "builtin")       # EXT display when connected / built-in only
 
 # domain -> (imap_host, imap_port, smtp_host, smtp_port)
 PRESETS = {
@@ -42,7 +44,8 @@ def config_path():
 def empty_account():
     return {"name": "", "email": "", "username": "", "password": "",
             "imap_host": "", "imap_port": "993", "smtp_host": "", "smtp_port": "465",
-            "view_mode": "text", "remote_images": "off", "download_dir": ""}
+            "view_mode": "text", "remote_images": "off", "download_dir": "",
+            "screen": "auto"}
 
 
 def default_download_dir():

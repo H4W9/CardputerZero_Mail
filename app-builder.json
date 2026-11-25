@@ -1,6 +1,6 @@
 {
   "package_name": "czmail",
-  "version": "0.3.4",
+  "version": "0.4.0",
   "app_name": "Email",
   "bin_name": "czmail",
   "description": "Email client for the Cardputer Zero",
@@ -8,7 +8,7 @@
   "caps": ["keyboard", "network", "filesystem"],
   "store": {
     "summary": "Read and send email from your Cardputer Zero. Works with Gmail, Outlook and more",
-    "description": "Check your inbox, read, reply, forward and write new emails right on the Cardputer.\n\nWorks with any IMAP account. Gmail, Outlook, Yahoo, iCloud and Fastmail settings fill in by themselves when you type your address. Gmail and most big providers need an app password.\n\nWhat it can do:\n- Inbox, folders and search\n- Reply, reply all, forward\n- Contact suggestions from people you've emailed\n- Text only or full view with pictures\n- Save attachments and pictures to Downloads\n- Open links in a simple text browser, or as a QR code for your phone\n- Optional voice typing that works offline\n\nPress Fn+H on any screen for the keys.",
+    "description": "Check your inbox, read, reply, forward and write new emails right on the Cardputer.\n\nWorks with any IMAP account. Gmail, Outlook, Yahoo, iCloud and Fastmail settings fill in by themselves when you type your address. Gmail and most big providers need an app password.\n\nWhat it can do:\n- Inbox, folders and search\n- Reply, reply all, forward\n- Contact suggestions from people you've emailed\n- Text only or full view with pictures\n- Save attachments and pictures to Downloads\n- Open links in a simple text browser, or as a QR code for your phone\n- Optional voice typing that works offline\n- Uses the whole 2.8in EXT display if you have DisplayMOD\n\nPress Fn+H on any screen for the keys.",
     "categories": ["Creative & Office"],
     "screenshots": [
       "store/screenshots/inbox.png",

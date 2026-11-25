@@ -8,8 +8,8 @@ import time
 
 from PIL import Image, ImageChops
 
+from . import ui
 from .keyboard import Key
-from .ui import W, H
 
 try:
     import numpy as np
@@ -78,12 +78,16 @@ class FramebufferDisplay:
             self.line_length = self.xres * self.bpp // 8
         size = min(smem_len or self.line_length * self.yres, self.line_length * self.yres)
         self.mm = mmap.mmap(self.fd, size, mmap.MAP_SHARED, mmap.PROT_WRITE | mmap.PROT_READ)
-        self.w = min(W, self.xres)
-        self.h = min(H, self.yres)
+        self.w, self.h = self.xres, self.yres
 
     def show(self, img):
+        # A portrait panel (EXT display with ROTATE 0/180) gets the frame turned.
+        if self.w < self.h and img.width > img.height:
+            img = img.transpose(Image.ROTATE_270)
         if img.size != (self.w, self.h):
-            img = img.crop((0, 0, self.w, self.h))
+            canvas = Image.new("RGB", (self.w, self.h), (0, 0, 0))
+            canvas.paste(img.crop((0, 0, min(img.width, self.w), min(img.height, self.h))), (0, 0))
+            img = canvas
         if self.bpp == 16:
             data = to_rgb565(img)
             bpp = 2
@@ -105,8 +109,9 @@ class FramebufferDisplay:
         except Exception:
             pass
 
-    def close(self):
-        self.clear()
+    def close(self, clear=True):
+        if clear:
+            self.clear()
         try:
             self.mm.close()
             os.close(self.fd)
@@ -114,13 +119,39 @@ class FramebufferDisplay:
             pass
 
 
-def run_device(app, fps_idle=0.05):
-    """Main loop for the real device: framebuffer + evdev."""
+def builtin_copy(frame, size=(320, 170)):
+    """The EXT frame scaled to fit the built-in screen, centred on black."""
+    bw, bh = size
+    scale = min(bw / frame.width, bh / frame.height)
+    small = frame.resize((max(1, int(frame.width * scale)), max(1, int(frame.height * scale))),
+                         Image.BILINEAR)
+    out = Image.new("RGB", size, (0, 0, 0))
+    out.paste(small, ((bw - small.width) // 2, (bh - small.height) // 2))
+    return out
+
+
+def run_device(app, fps_idle=0.05, ext_path=None):
+    """Main loop for the real device: framebuffer + evdev.
+
+    With ext_path the app is drawn full size on the DisplayMOD EXT display
+    and the built-in screen shows a scaled copy.
+    """
     import signal
 
+    from . import extdisplay
     from .keyboard import EvdevKeyboard
 
-    display = FramebufferDisplay()
+    builtin = ext = None
+    if ext_path:
+        ext = FramebufferDisplay(ext_path)
+        try:
+            builtin = FramebufferDisplay()
+        except OSError:
+            builtin = None
+        extdisplay.claim()
+        main = ext
+    else:
+        main = FramebufferDisplay()
     kbd = EvdevKeyboard()
 
     def _stop(_sig, _frm):
@@ -134,10 +165,18 @@ def run_device(app, fps_idle=0.05):
                 app.handle_key(ev)
             frame = app.tick()
             if frame is not None:
-                display.show(frame)
+                main.show(frame)
+                if builtin is not None:
+                    builtin.show(builtin_copy(frame, (builtin.w, builtin.h)))
     finally:
         kbd.close()
-        display.close()
+        if ext is not None:
+            ext.close(clear=False)      # the DisplayMOD mirror repaints it
+            extdisplay.release()
+            if builtin is not None:
+                builtin.close()
+        else:
+            main.close()
 
 
 # ---------------------------------------------------------------- desktop --
@@ -151,6 +190,7 @@ _TK_KEYS = {
 
 
 def run_desktop(app, scale=3):
+    W, H = ui.W, ui.H
     """Preview in a desktop window (Windows/macOS/Linux) with Tk."""
     import tkinter as tk
 

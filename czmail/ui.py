@@ -4,7 +4,13 @@ import os
 
 from PIL import ImageFont
 
-W, H = 320, 170
+W, H = 320, 170   # built-in screen; set_size() switches to the EXT display (320x240)
+
+
+def set_size(w, h):
+    """Pick the screen size. Call before importing app/display."""
+    global W, H
+    W, H = w, h
 
 # Theme (RGB). Dark UI: the ST7789V panel looks best with dark backgrounds.
 C = {

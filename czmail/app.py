@@ -151,7 +151,7 @@ class TextArea:
         self.value = value
         self.cur = 0
         self.top = 0
-        self.width = 308
+        self.width = W - 12
         self.fnt = font("regular", 11)
         self.lh = 13
 
@@ -277,7 +277,9 @@ class Confirm(Screen):
             self.app.pop()
 
     def draw(self, d):
-        x0, y0, x1, y1 = 30, 48, W - 30, 120
+        x0, x1 = 30, W - 30
+        y0 = (H - 72) // 2
+        y1 = y0 + 72
         d.rectangle([x0, y0, x1, y1], fill=C["panel"], outline=C["accent"])
         f = font("bold", 11)
         lines = wrap_lines(self.question, f, x1 - x0 - 16)[:3]
@@ -289,7 +291,8 @@ class Confirm(Screen):
 
 
 CHOICE_LABELS = {"text": "Text only", "full": "Full (formatted + images)",
-                 "off": "Off", "on": "On (sender can see you opened it)"}
+                 "off": "Off", "on": "On (sender can see you opened it)",
+                 "auto": "EXT display if connected", "builtin": "Built-in only"}
 
 # (label, key, kind): kind is "text", "mask" or a tuple of options
 SETUP_ROWS = [
@@ -304,6 +307,7 @@ SETUP_ROWS = [
     ("View mail", "view_mode", config.VIEW_MODES),
     ("Remote img", "remote_images", config.ON_OFF),
     ("Downloads", "download_dir", "text"),
+    ("Screen", "screen", config.SCREENS),
 ]
 CONNECTION_KEYS = ("email", "password", "imap_host", "imap_port", "smtp_host",
                    "smtp_port", "username")
@@ -320,6 +324,7 @@ SETUP_HINTS = {
     "view_mode": "◀▶ or Space. V in the reader switches per message",
     "remote_images": "Web pictures; needs View mail = Full (or V in a message)",
     "download_dir": "Where attachments are saved",
+    "screen": "DisplayMOD 2.8in screen. Takes effect next time you open Email",
 }
 
 
@@ -644,7 +649,7 @@ class InboxScreen(Screen):
         if not self.items:
             msg = ("Searching…" if self.query else "Loading…") \
                 if (self.loading or not self.loaded) else ("No results" if self.query else "No messages")
-            d.text(((W - text_w(fr, msg)) / 2, 72), msg, font=fr, fill=C["dim"])
+            d.text(((W - text_w(fr, msg)) / 2, H // 2 - 13), msg, font=fr, fill=C["dim"])
         for r in range(rows):
             i = self.top + r
             if i >= len(self.items):
@@ -722,7 +727,7 @@ class FolderScreen(Screen):
             self.top = self.sel - rows + 1
         if not self.folders:
             msg = "Loading…" if self.loading else "No folders"
-            d.text(((W - text_w(f, msg)) / 2, 72), msg, font=f, fill=C["dim"])
+            d.text(((W - text_w(f, msg)) / 2, H // 2 - 13), msg, font=f, fill=C["dim"])
         for r in range(rows):
             i = self.top + r
             if i >= len(self.folders):
@@ -821,7 +826,7 @@ class DocView(Screen):
         f = font("regular", 11)
         d.text((5, 20), ellipsize(font("bold", 11), title, W - 10),
                font=font("bold", 11), fill=C["text"])
-        d.text(((W - text_w(f, "Loading…")) / 2, 72), "Loading…", font=f, fill=C["dim"])
+        d.text(((W - text_w(f, "Loading…")) / 2, H // 2 - 13), "Loading…", font=f, fill=C["dim"])
 
 
 class ReaderScreen(DocView):
@@ -1259,7 +1264,9 @@ class SearchPrompt(Screen):
             self.scope.on_key(ev)
 
     def draw(self, d):
-        x0, y0, x1, y1 = 14, 34, W - 14, 132
+        x0, x1 = 14, W - 14
+        y0 = (H - 98) // 2
+        y1 = y0 + 98
         d.rectangle([x0, y0, x1, y1], fill=C["panel"], outline=C["accent"])
         fb, fs, ff = font("bold", 11), font("regular", 10), font("regular", 11)
         d.text((x0 + 8, y0 + 6), "Search mail", font=fb, fill=C["text"])
@@ -1386,7 +1393,7 @@ class ContactsScreen(Screen):
         fb, fs = font("bold", 11), font("regular", 10)
         if not self.results:
             msg = "No matches" if len(self.app.contacts) else "No contacts yet (scanning Sent…)"
-            d.text(((W - text_w(fs, msg)) / 2, 80), msg, font=fs, fill=C["dim"])
+            d.text(((W - text_w(fs, msg)) / 2, H // 2 - 5), msg, font=fs, fill=C["dim"])
         for r in range(rows):
             i = self.top + r
             if i >= len(self.results):
@@ -1815,6 +1822,7 @@ class HelpScreen(DocView):
             ("View", "full" if a.get("view_mode") == "full" else "text only"),
             ("Web pictures", a.get("remote_images") or "off"),
             ("Downloads", config.download_dir(a)),
+            ("Screen", "EXT display %dx%d" % (W, H) if H > 170 else "built-in"),
             ("Contacts", "%d known" % len(self.app.contacts)),
             ("Dictation", "ready" if ok else why),
             ("QR codes", qr),
