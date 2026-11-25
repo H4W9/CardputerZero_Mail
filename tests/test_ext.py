@@ -67,14 +67,61 @@ class ExtTests(unittest.TestCase):
             extdisplay.release()
             self.assertFalse(os.path.exists(flag))
 
-    def test_layout_at_ext_size_and_builtin_copy(self):
-        from PIL import Image
-        from czmail.display import builtin_copy
-        im = builtin_copy(Image.new("RGB", (320, 240), (255, 0, 0)))
-        self.assertEqual(im.size, (320, 170))
-        self.assertEqual(im.getpixel((160, 85)), (255, 0, 0))
-        self.assertEqual(im.getpixel((5, 85)), (0, 0, 0))            # black side bars
-
+    def test_render_at_builtin_size(self):
+        """Main view at 320x240 (EXT), second view laid out natively at 320x170."""
+        import subprocess
+        code = r"""
+import os, sys
+os.environ["CZMAIL_DEMO_FAST"] = "1"
+sys.path.insert(0, sys.argv[1])
+from czmail import ui
+ui.set_size(320, 240)
+from czmail.demo import make_demo_app
+from czmail.display import pump
+from czmail.keyboard import Key
+app = make_demo_app()
+pump(app, 0.3)
+def key(k=None, ch=None):
+    app.handle_key(Key(True, key=k, char=ch)); app.handle_key(Key(False, key=k, char=ch))
+assert app.tick(force=True).size == (320, 240)
+inbox = app.top
+for _ in range(6):
+    key("down")                                    # 7th email: fits at 240, not at 170
+app.tick(force=True)
+top_main = inbox.top
+small = app.render_at(320, 170)
+assert small.size == (320, 170), small.size
+assert (ui.W, ui.H) == (320, 240), (ui.W, ui.H)  # size restored
+assert inbox.top == top_main                     # main scroll untouched
+rows = (170 - 29) // inbox.RH
+saw = [None]
+orig = inbox.draw
+def spy(d):
+    orig(d); saw[0] = inbox.top
+inbox.draw = spy
+app.render_at(320, 170)
+assert saw[0] <= inbox.sel < saw[0] + rows        # selection visible on the small view too
+inbox.draw = orig
+# long document: both views line up at the start and at the end
+key("up"); key("up"); key("up"); key("up"); key("up"); key("enter")
+for _ in range(40):
+    pump(app, 0.02)
+    if not app.pending: break
+rd = app.top
+rd.items = [("line", ("x", None, 13), 13)] * 60
+rd.total = 60 * 13
+app.main_h = 240
+rd.top = 0
+assert rd.view_top() == 0
+rd.top = rd.maxtop()
+ui.set_size(320, 170)
+assert rd.view_top() == rd.total - rd.view_h(), (rd.view_top(), rd.total - rd.view_h())
+print("ok")
+"""
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        r = subprocess.run([sys.executable, "-c", code, root], capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stderr[-2000:])
+        self.assertIn("ok", r.stdout)
 
 if __name__ == "__main__":
     unittest.main()

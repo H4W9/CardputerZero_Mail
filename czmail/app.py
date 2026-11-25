@@ -6,10 +6,10 @@ import time
 
 from PIL import Image, ImageDraw
 
-from . import __version__, config, mailer, speech
+from . import __version__, config, mailer, speech, ui
 from .contacts import ContactBook
 from .keyboard import Key
-from .ui import (C, H, W, draw_bar, draw_footer, ellipsize, font, text_w,
+from .ui import (C, draw_bar, draw_footer, ellipsize, font, text_w,
                  wrap_lines, wrap_offsets)
 
 LONG_ESC = 0.8     # seconds held = exit app
@@ -151,7 +151,7 @@ class TextArea:
         self.value = value
         self.cur = 0
         self.top = 0
-        self.width = W - 12
+        self.width = ui.W - 12
         self.fnt = font("regular", 11)
         self.lh = 13
 
@@ -277,8 +277,8 @@ class Confirm(Screen):
             self.app.pop()
 
     def draw(self, d):
-        x0, x1 = 30, W - 30
-        y0 = (H - 72) // 2
+        x0, x1 = 30, ui.W - 30
+        y0 = (ui.H - 72) // 2
         y1 = y0 + 72
         d.rectangle([x0, y0, x1, y1], fill=C["panel"], outline=C["accent"])
         f = font("bold", 11)
@@ -449,7 +449,7 @@ class SetupScreen(Screen):
         draw_bar(d, "Account setup")
         fl = font("regular", 10)
         ff = font("regular", 11)
-        rows = (H - 16 - 13) // self.RH
+        rows = (ui.H - 16 - 13) // self.RH
         n = len(self.fields) + 1
         if self.focus < self.top:
             self.top = self.focus
@@ -474,7 +474,7 @@ class SetupScreen(Screen):
             label = SETUP_ROWS[i][0]
             d.text((4, y + 2), label, font=fl,
                    fill=C["accent"] if self.focus == i else C["dim"])
-            self.fields[i].draw(d, 72, y, W - 76, self.RH - 2, self.focus == i, ff)
+            self.fields[i].draw(d, 72, y, ui.W - 76, self.RH - 2, self.focus == i, ff)
         if self.focus < len(self.fields):
             hint = SETUP_HINTS.get(SETUP_ROWS[self.focus][1], "")
             if SETUP_ROWS[self.focus][1] == "password":
@@ -631,7 +631,7 @@ class InboxScreen(Screen):
             self.app.toast("Hold Esc to exit", C["dim"])
 
     def rows(self):
-        return (H - 16 - 13) // self.RH
+        return (ui.H - 16 - 13) // self.RH
 
     def draw(self, d):
         unread = sum(1 for s in self.items if not s.seen)
@@ -649,7 +649,7 @@ class InboxScreen(Screen):
         if not self.items:
             msg = ("Searching…" if self.query else "Loading…") \
                 if (self.loading or not self.loaded) else ("No results" if self.query else "No messages")
-            d.text(((W - text_w(fr, msg)) / 2, H // 2 - 13), msg, font=fr, fill=C["dim"])
+            d.text(((ui.W - text_w(fr, msg)) / 2, ui.H // 2 - 13), msg, font=fr, fill=C["dim"])
         for r in range(rows):
             i = self.top + r
             if i >= len(self.items):
@@ -657,23 +657,23 @@ class InboxScreen(Screen):
             s = self.items[i]
             y = 16 + r * self.RH
             if i == self.sel:
-                d.rectangle([0, y, W, y + self.RH - 1], fill=C["sel"])
+                d.rectangle([0, y, ui.W, y + self.RH - 1], fill=C["sel"])
             if not s.seen:
                 d.ellipse([3, y + 6, 8, y + 11], fill=C["unread"])
             date = mailer.short_date(s.date)
             dw = text_w(fs, date)
-            d.text((W - 6 - dw, y + 3), date, font=fs, fill=C["dim"])
+            d.text((ui.W - 6 - dw, y + 3), date, font=fs, fill=C["dim"])
             sf = fb if not s.seen else fr
-            d.text((12, y + 1), ellipsize(sf, s.sender or s.sender_addr or "?", W - 26 - dw),
+            d.text((12, y + 1), ellipsize(sf, s.sender or s.sender_addr or "?", ui.W - 26 - dw),
                    font=sf, fill=C["text"] if not s.seen else C["dim"] if i != self.sel else C["text"])
-            d.text((12, y + 14), ellipsize(fs, s.subject, W - 20), font=fs,
+            d.text((12, y + 14), ellipsize(fs, s.subject, ui.W - 20), font=fs,
                    fill=C["text"] if i == self.sel or not s.seen else C["dim"])
-            d.line([12, y + self.RH - 1, W - 4, y + self.RH - 1], fill=C["panel"])
+            d.line([12, y + self.RH - 1, ui.W - 4, y + self.RH - 1], fill=C["panel"])
         if self.items and len(self.items) > rows:
             total = max(len(self.uids), len(self.items))
-            th = max(6, int((H - 29) * rows / total))
-            ty = 16 + int((H - 29 - th) * self.top / max(1, len(self.items) - rows))
-            d.rectangle([W - 2, ty, W - 1, ty + th], fill=C["accent"])
+            th = max(6, int((ui.H - 29) * rows / total))
+            ty = 16 + int((ui.H - 29 - th) * self.top / max(1, len(self.items) - rows))
+            d.rectangle([ui.W - 2, ty, ui.W - 1, ty + th], fill=C["accent"])
         draw_footer(d, "Enter:open  /:search  C:new  R:refresh  F:folders  D:del  U:unread  S:setup"
                     if not self.query else "Enter:open  /:new search  D:del  U:unread  Esc:back")
 
@@ -720,22 +720,22 @@ class FolderScreen(Screen):
     def draw(self, d):
         draw_bar(d, "Folders")
         f = font("regular", 11)
-        rows = (H - 16 - 13) // self.RH
+        rows = (ui.H - 16 - 13) // self.RH
         if self.sel < self.top:
             self.top = self.sel
         elif self.sel >= self.top + rows:
             self.top = self.sel - rows + 1
         if not self.folders:
             msg = "Loading…" if self.loading else "No folders"
-            d.text(((W - text_w(f, msg)) / 2, H // 2 - 13), msg, font=f, fill=C["dim"])
+            d.text(((ui.W - text_w(f, msg)) / 2, ui.H // 2 - 13), msg, font=f, fill=C["dim"])
         for r in range(rows):
             i = self.top + r
             if i >= len(self.folders):
                 break
             y = 17 + r * self.RH
             if i == self.sel:
-                d.rectangle([0, y - 1, W, y + self.RH - 2], fill=C["sel"])
-            d.text((8, y), ellipsize(f, self.folders[i][1], W - 16), font=f, fill=C["text"])
+                d.rectangle([0, y - 1, ui.W, y + self.RH - 2], fill=C["sel"])
+            d.text((8, y), ellipsize(f, self.folders[i][1], ui.W - 16), font=f, fill=C["text"])
         draw_footer(d, "Enter: open folder   Esc: back")
 
 
@@ -756,13 +756,13 @@ class DocView(Screen):
         self.top = min(self.top, self.maxtop())
 
     def view_h(self):
-        return H - 16 - 13
+        return ui.H - 16 - 13
 
     def maxtop(self):
         return max(0, self.total - self.view_h())
 
     def add_text(self, out, text, f, color):
-        for line in wrap_lines(text, f, W - 10):
+        for line in wrap_lines(text, f, ui.W - 10):
             out.append(("line", (line, f, color), self.LH))
 
     def add_blocks(self, out, blocks):
@@ -796,9 +796,26 @@ class DocView(Screen):
             return False
         return True
 
+    def view_top(self):
+        """Scroll offset for the size being drawn now.
+
+        self.top belongs to the main view. A shorter second view (the built-in
+        screen while the app is on the EXT display) follows it proportionally,
+        so both show the top and the end of the document at the same time.
+        """
+        top, vh = self.top, self.view_h()
+        main_h = getattr(self.app, "main_h", None) if self.app else None
+        if main_h and main_h != ui.H:
+            main_vh = main_h - 16 - 13
+            if self.total > main_vh:
+                top = top + (main_vh - vh) * top / (self.total - main_vh)
+            top = int(max(0, min(top, max(0, self.total - vh))))
+        return top
+
     def draw_items(self, d):
         y0, vh = 16, self.view_h()
-        y = -self.top
+        top = self.view_top()
+        y = -top
         for kind, payload, h in self.items:
             if y + h <= 0:
                 y += h
@@ -815,18 +832,18 @@ class DocView(Screen):
                 bot_cut = max(0, y + im.height - vh)
                 if im.height - top_cut - bot_cut > 0:
                     part = im.crop((0, top_cut, im.width, im.height - bot_cut))
-                    d._image.paste(part, ((W - im.width) // 2, y0 + 2 + y + top_cut))
+                    d._image.paste(part, ((ui.W - im.width) // 2, y0 + 2 + y + top_cut))
             y += h
         if self.total > vh:
             th = max(6, int(vh * vh / self.total))
-            ty = y0 + int((vh - th) * self.top / max(1, self.maxtop()))
-            d.rectangle([W - 2, ty, W - 1, ty + th], fill=C["accent"])
+            ty = y0 + int((vh - th) * top / max(1, self.maxtop()))
+            d.rectangle([ui.W - 2, ty, ui.W - 1, ty + th], fill=C["accent"])
 
     def draw_loading(self, d, title):
         f = font("regular", 11)
-        d.text((5, 20), ellipsize(font("bold", 11), title, W - 10),
+        d.text((5, 20), ellipsize(font("bold", 11), title, ui.W - 10),
                font=font("bold", 11), fill=C["text"])
-        d.text(((W - text_w(f, "Loading…")) / 2, H // 2 - 13), "Loading…", font=f, fill=C["dim"])
+        d.text(((ui.W - text_w(f, "Loading…")) / 2, ui.H // 2 - 13), "Loading…", font=f, fill=C["dim"])
 
 
 class ReaderScreen(DocView):
@@ -890,7 +907,7 @@ class ReaderScreen(DocView):
         if m.full and m.blocks is not None:
             self.add_blocks(out, m.blocks)
         else:
-            for line in wrap_lines(m.text or "(empty message)", fr, W - 10):
+            for line in wrap_lines(m.text or "(empty message)", fr, ui.W - 10):
                 color = C["dim"] if line.startswith(">") else C["text"]
                 out.append(("line", (line, fr, color), self.LH))
         if m.truncated:
@@ -1013,7 +1030,7 @@ class ImagesScreen(Screen):
 
     def draw(self, d):
         draw_bar(d, "Images", "%d" % len(self.images))
-        rows = (H - 16 - 13) // self.RH
+        rows = (ui.H - 16 - 13) // self.RH
         if self.sel < self.top:
             self.top = self.sel
         elif self.sel >= self.top + rows:
@@ -1026,14 +1043,14 @@ class ImagesScreen(Screen):
             ref = self.images[i]
             y = 16 + r * self.RH
             if i == self.sel:
-                d.rectangle([0, y, W, y + self.RH - 1], fill=C["sel"])
+                d.rectangle([0, y, ui.W, y + self.RH - 1], fill=C["sel"])
             t = self.thumb(i)
             d._image.paste(t, (6 + (48 - t.width) // 2, y + 2 + (34 - t.height) // 2))
-            d.text((60, y + 3), ellipsize(fb, ref.name, W - 66), font=fb, fill=C["text"])
+            d.text((60, y + 3), ellipsize(fb, ref.name, ui.W - 66), font=fb, fill=C["text"])
             info = "%s  ·  %d×%d shown" % (mailer.human_size(len(ref.data)), ref.size[0], ref.size[1])
             if i in self.saved:
                 info = "✓ saved  " + info
-            d.text((60, y + 18), ellipsize(fs, info, W - 66), font=fs,
+            d.text((60, y + 18), ellipsize(fs, info, ui.W - 66), font=fs,
                    fill=C["ok"] if i in self.saved else C["dim"])
         draw_footer(d, "Enter: save original  A: save all  → " + config.download_dir(self.app.acct))
 
@@ -1071,7 +1088,7 @@ class LinksScreen(Screen):
 
     def draw(self, d):
         draw_bar(d, "Links", "%d" % len(self.links))
-        rows = (H - 16 - 13) // self.RH
+        rows = (ui.H - 16 - 13) // self.RH
         if self.sel < self.top:
             self.top = self.sel
         elif self.sel >= self.top + rows:
@@ -1084,10 +1101,10 @@ class LinksScreen(Screen):
             url = self.links[i]
             y = 16 + r * self.RH
             if i == self.sel:
-                d.rectangle([0, y, W, y + self.RH - 1], fill=C["sel"])
+                d.rectangle([0, y, ui.W, y + self.RH - 1], fill=C["sel"])
             label = self.labels.get(url) or mailer.urlparse(url).netloc
-            d.text((6, y + 1), ellipsize(fb, "%d. %s" % (i + 1, label), W - 12), font=fb, fill=C["text"])
-            d.text((6, y + 12), ellipsize(fs, url, W - 12), font=fs, fill=C["accent"])
+            d.text((6, y + 1), ellipsize(fb, "%d. %s" % (i + 1, label), ui.W - 12), font=fb, fill=C["text"])
+            d.text((6, y + 12), ellipsize(fs, url, ui.W - 12), font=fs, fill=C["accent"])
         draw_footer(d, "Enter: open  Q: QR code for phone  S: download  Esc: back")
 
 
@@ -1204,25 +1221,25 @@ class QRScreen(Screen):
             self.app.pop()
 
     def draw(self, d):
-        d.rectangle([0, 0, W, H], fill=(255, 255, 255))
+        d.rectangle([0, 0, ui.W, ui.H], fill=(255, 255, 255))
         fs = font("regular", 10)
         if self.matrix is None:
-            d.rectangle([0, 0, W, H], fill=C["bg"])
+            d.rectangle([0, 0, ui.W, ui.H], fill=C["bg"])
             draw_bar(d, "QR code")
             for i, line in enumerate(self.error.split("\n")):
                 d.text((10, 40 + i * 14), line, font=font("regular", 11), fill=C["warn"])
             return
         n = len(self.matrix)
-        scale = max(1, min(H - 4, 166) // n)
+        scale = max(1, min(ui.H - 4, 166) // n)
         size = n * scale
-        x0, y0 = 4, (H - size) // 2
+        x0, y0 = 4, (ui.H - size) // 2
         for r, row in enumerate(self.matrix):
             for c, on in enumerate(row):
                 if on:
                     d.rectangle([x0 + c * scale, y0 + r * scale,
                                  x0 + (c + 1) * scale - 1, y0 + (r + 1) * scale - 1], fill=(0, 0, 0))
         tx = x0 + size + 8
-        tw = W - tx - 4
+        tw = ui.W - tx - 4
         d.text((tx, 8), "Scan with", font=font("bold", 11), fill=(0, 0, 0))
         d.text((tx, 22), "your phone", font=font("bold", 11), fill=(0, 0, 0))
         lines = wrap_lines(self.url, fs, tw)
@@ -1231,7 +1248,7 @@ class QRScreen(Screen):
         if len(lines) > 9:
             d.text((tx, 44 + 9 * 12), "…", font=fs, fill=(70, 70, 70))
         if scale == 1 and n > 100:
-            d.text((tx, H - 14), "dense: hold phone close", font=fs, fill=(180, 60, 40))
+            d.text((tx, ui.H - 14), "dense: hold phone close", font=fs, fill=(180, 60, 40))
 
 
 class SearchPrompt(Screen):
@@ -1264,8 +1281,8 @@ class SearchPrompt(Screen):
             self.scope.on_key(ev)
 
     def draw(self, d):
-        x0, x1 = 14, W - 14
-        y0 = (H - 98) // 2
+        x0, x1 = 14, ui.W - 14
+        y0 = (ui.H - 98) // 2
         y1 = y0 + 98
         d.rectangle([x0, y0, x1, y1], fill=C["panel"], outline=C["accent"])
         fb, fs, ff = font("bold", 11), font("regular", 10), font("regular", 11)
@@ -1325,7 +1342,7 @@ class AttachmentsScreen(Screen):
     def draw(self, d):
         atts = self.reader.msg.attachments
         draw_bar(d, "Attachments", "%d" % len(atts))
-        rows = (H - 16 - 13) // self.RH
+        rows = (ui.H - 16 - 13) // self.RH
         if self.sel < self.top:
             self.top = self.sel
         elif self.sel >= self.top + rows:
@@ -1338,12 +1355,12 @@ class AttachmentsScreen(Screen):
             a = atts[i]
             y = 16 + r * self.RH
             if i == self.sel:
-                d.rectangle([0, y, W, y + self.RH - 1], fill=C["sel"])
-            d.text((8, y + 2), ellipsize(fb, a.name, W - 16), font=fb, fill=C["text"])
+                d.rectangle([0, y, ui.W, y + self.RH - 1], fill=C["sel"])
+            d.text((8, y + 2), ellipsize(fb, a.name, ui.W - 16), font=fb, fill=C["text"])
             info = "%s  ·  %s" % (mailer.human_size(a.size), a.ctype)
             if a.idx in self.saved:
                 info = "✓ saved  " + info
-            d.text((8, y + 14), ellipsize(fs, info, W - 16), font=fs,
+            d.text((8, y + 14), ellipsize(fs, info, ui.W - 16), font=fs,
                    fill=C["ok"] if a.idx in self.saved else C["dim"])
         draw_footer(d, "Enter: save  A: save all  → " + config.download_dir(self.app.acct))
 
@@ -1384,8 +1401,8 @@ class ContactsScreen(Screen):
 
     def draw(self, d):
         draw_bar(d, "Contacts", "%d" % len(self.app.contacts))
-        self.search.draw(d, 4, 17, W - 8, 15, True, font("regular", 11))
-        rows = (H - 34 - 13) // self.RH
+        self.search.draw(d, 4, 17, ui.W - 8, 15, True, font("regular", 11))
+        rows = (ui.H - 34 - 13) // self.RH
         if self.sel < self.top:
             self.top = self.sel
         elif self.sel >= self.top + rows:
@@ -1393,7 +1410,7 @@ class ContactsScreen(Screen):
         fb, fs = font("bold", 11), font("regular", 10)
         if not self.results:
             msg = "No matches" if len(self.app.contacts) else "No contacts yet (scanning Sent…)"
-            d.text(((W - text_w(fs, msg)) / 2, H // 2 - 5), msg, font=fs, fill=C["dim"])
+            d.text(((ui.W - text_w(fs, msg)) / 2, ui.H // 2 - 5), msg, font=fs, fill=C["dim"])
         for r in range(rows):
             i = self.top + r
             if i >= len(self.results):
@@ -1401,9 +1418,9 @@ class ContactsScreen(Screen):
             c = self.results[i]
             y = 34 + r * self.RH
             if i == self.sel:
-                d.rectangle([0, y, W, y + self.RH - 1], fill=C["sel"])
-            d.text((8, y + 1), ellipsize(fb, c.name or c.addr, W - 16), font=fb, fill=C["text"])
-            d.text((8, y + 12), ellipsize(fs, c.addr, W - 16), font=fs, fill=C["dim"])
+                d.rectangle([0, y, ui.W, y + self.RH - 1], fill=C["sel"])
+            d.text((8, y + 1), ellipsize(fb, c.name or c.addr, ui.W - 16), font=fb, fill=C["text"])
+            d.text((8, y + 12), ellipsize(fs, c.addr, ui.W - 16), font=fs, fill=C["dim"])
         draw_footer(d, "Type: filter   ↑↓ choose   Enter: add   Esc: back")
 
 
@@ -1664,7 +1681,7 @@ class ComposeScreen(Screen):
         fb = font("bold", 10)
         lbl = "Send"
         bw = text_w(fb, lbl) + 12
-        bx = W - 18 - bw
+        bx = ui.W - 18 - bw
         d.rectangle([bx, 2, bx + bw, 13],
                     fill=C["ok"] if self.focus == 4 else C["panel"])
         d.text((bx + 6, 2), lbl, font=fb, fill=C["bg"] if self.focus == 4 else C["text"])
@@ -1672,12 +1689,12 @@ class ComposeScreen(Screen):
         for i, lbl in enumerate(("To", "Cc", "Subject")):
             y = 17 + i * 15
             d.text((4, y + 1), lbl, font=fl, fill=C["accent"] if self.focus == i else C["dim"])
-            self.fields[i].draw(d, 48, y, W - 52, 14, self.focus == i, ff)
-        d.line([0, 62, W, 62], fill=C["panel"])
-        self.body.draw(d, 6, 64, H - 13 - 64, self.focus == 3)
+            self.fields[i].draw(d, 48, y, ui.W - 52, 14, self.focus == i, ff)
+        d.line([0, 62, ui.W, 62], fill=C["panel"])
+        self.body.draw(d, 6, 64, ui.H - 13 - 64, self.focus == 3)
         if self.pop_items:
             y = 17 + self.focus * 15 + 15
-            x0, x1 = 48, W - 4
+            x0, x1 = 48, ui.W - 4
             d.rectangle([x0, y, x1, y + self.POP_RH * len(self.pop_items) + 2],
                         fill=C["panel"], outline=C["accent"])
             fs = font("regular", 10)
@@ -1704,7 +1721,7 @@ class ComposeScreen(Screen):
 
     def _draw_dictation(self, d):
         dct = self.app.dictation
-        x0, y0, x1, y1 = 10, 70, W - 10, H - 18
+        x0, y0, x1, y1 = 10, 70, ui.W - 10, ui.H - 18
         d.rectangle([x0, y0, x1, y1], fill=C["panel"], outline=C["warn"])
         fb, fr = font("bold", 11), font("regular", 11)
         label = {"loading": "Loading speech model…", "listening": "Listening",
@@ -1795,7 +1812,7 @@ class HelpScreen(DocView):
 
         def keys(rows):
             for k, what in rows:
-                for i, line in enumerate(wrap_lines(what, fs, W - 100)):
+                for i, line in enumerate(wrap_lines(what, fs, ui.W - 100)):
                     out.append(("key", (k if i == 0 else "", line), self.LH))
 
         here = HELP.get(type(self.under).__name__)
@@ -1822,7 +1839,7 @@ class HelpScreen(DocView):
             ("View", "full" if a.get("view_mode") == "full" else "text only"),
             ("Web pictures", a.get("remote_images") or "off"),
             ("Downloads", config.download_dir(a)),
-            ("Screen", "EXT display %dx%d" % (W, H) if H > 170 else "built-in"),
+            ("Screen", "EXT display %dx%d" % (ui.W, ui.H) if ui.H > 170 else "built-in"),
             ("Contacts", "%d known" % len(self.app.contacts)),
             ("Dictation", "ready" if ok else why),
             ("QR codes", qr),
@@ -1842,7 +1859,8 @@ class HelpScreen(DocView):
         draw_bar(d, "Help")
         y0, vh = 16, self.view_h()
         fk, fs = font("bold", 10), font("regular", 10)
-        y = -self.top
+        top = self.view_top()
+        y = -top
         for kind, payload, h in self.items:
             if 0 <= y < vh - 2:
                 if kind == "key":
@@ -1856,16 +1874,44 @@ class HelpScreen(DocView):
             y += h
         if self.total > vh:
             th = max(6, int(vh * vh / self.total))
-            ty = y0 + int((vh - th) * self.top / max(1, self.maxtop()))
-            d.rectangle([W - 2, ty, W - 1, ty + th], fill=C["accent"])
+            ty = y0 + int((vh - th) * top / max(1, self.maxtop()))
+            d.rectangle([ui.W - 2, ty, ui.W - 1, ty + th], fill=C["accent"])
         draw_footer(d, "up / down scroll   Esc close")
 
 
 # ----------------------------------------------------------------- app ---
 
+_SCROLL_ATTRS = ("top", "scroll")
+
+
+def _scroll_state(stack):
+    """(object, attribute, value) for every scroll position on the stack."""
+    out, seen = [], set()
+
+    def add(obj):
+        if id(obj) in seen:
+            return
+        seen.add(id(obj))
+        for a in _SCROLL_ATTRS:
+            if a in getattr(obj, "__dict__", {}):
+                out.append((obj, a, getattr(obj, a)))
+
+    for s in stack:
+        add(s)
+        for v in vars(s).values():
+            if isinstance(v, (TextField, TextArea, ChoiceField)):
+                add(v)
+            elif isinstance(v, list):
+                for x in v:
+                    if isinstance(x, (TextField, TextArea)):
+                        add(x)
+    return out
+
+
 class App:
     def __init__(self, acct=None, make_client=None, send_fn=None):
         self.running = True
+        self.main_h = None  # set while render_at() draws the second view
         self.acct = acct if acct is not None else config.load()
         self.make_client = make_client or mailer.ImapClient
         self.send_fn = send_fn or mailer.smtp_send
@@ -2062,18 +2108,38 @@ class App:
         self.dirty = False
         return self.render()
 
+    def render_at(self, w, h):
+        """Draw the current screens at another size, laid out for that size.
+
+        Used for the built-in screen while the app runs on the EXT display.
+        Keys and scroll positions belong to the main view: lists may move
+        their window to keep the selection visible at this size, so every
+        scroll position is put back afterwards.
+        """
+        saved = (ui.W, ui.H)
+        state = _scroll_state(self.stack)
+        self.main_h = saved[1]
+        ui.set_size(w, h)
+        try:
+            return self.render()
+        finally:
+            ui.set_size(*saved)
+            self.main_h = None
+            for obj, attr, val in state:
+                setattr(obj, attr, val)
+
     def render(self):
-        img = Image.new("RGB", (W, H), C["bg"])
+        img = Image.new("RGB", (ui.W, ui.H), C["bg"])
         d = ImageDraw.Draw(img)
         # Draw the screen under an overlay first.
         if self.top.overlay and len(self.stack) > 1:
             self.stack[-2].draw(d)
-            dim = Image.new("RGB", (W, H), (0, 0, 0))
+            dim = Image.new("RGB", (ui.W, ui.H), (0, 0, 0))
             img.paste(Image.blend(img, dim, 0.45))
             d = ImageDraw.Draw(img)
         self.top.draw(d)
         if self.pending:
-            cx, cy = W - 8, 8
+            cx, cy = ui.W - 8, 8
             import math
             for i in range(8):
                 a = (i / 8.0) * 2 * math.pi
@@ -2084,10 +2150,10 @@ class App:
         if self.toast_msg:
             text, color, _ = self.toast_msg
             f = font("regular", 10)
-            lines = wrap_lines(text, f, W - 40)[:3]
+            lines = wrap_lines(text, f, ui.W - 40)[:3]
             bh = 6 + 12 * len(lines)
-            y0 = H - 16 - bh
-            d.rectangle([12, y0, W - 12, y0 + bh], fill=C["panel"], outline=color)
+            y0 = ui.H - 16 - bh
+            d.rectangle([12, y0, ui.W - 12, y0 + bh], fill=C["panel"], outline=color)
             for i, line in enumerate(lines):
                 d.text((20, y0 + 3 + i * 12), line, font=f, fill=color)
         return img

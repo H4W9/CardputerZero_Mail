@@ -119,22 +119,11 @@ class FramebufferDisplay:
             pass
 
 
-def builtin_copy(frame, size=(320, 170)):
-    """The EXT frame scaled to fit the built-in screen, centred on black."""
-    bw, bh = size
-    scale = min(bw / frame.width, bh / frame.height)
-    small = frame.resize((max(1, int(frame.width * scale)), max(1, int(frame.height * scale))),
-                         Image.BILINEAR)
-    out = Image.new("RGB", size, (0, 0, 0))
-    out.paste(small, ((bw - small.width) // 2, (bh - small.height) // 2))
-    return out
-
-
 def run_device(app, fps_idle=0.05, ext_path=None):
     """Main loop for the real device: framebuffer + evdev.
 
     With ext_path the app is drawn full size on the DisplayMOD EXT display
-    and the built-in screen shows a scaled copy.
+    and again, laid out for its own size, on the built-in screen.
     """
     import signal
 
@@ -167,7 +156,8 @@ def run_device(app, fps_idle=0.05, ext_path=None):
             if frame is not None:
                 main.show(frame)
                 if builtin is not None:
-                    builtin.show(builtin_copy(frame, (builtin.w, builtin.h)))
+                    bw, bh = max(builtin.w, builtin.h), min(builtin.w, builtin.h)
+                    builtin.show(app.render_at(bw, bh))
     finally:
         kbd.close()
         if ext is not None:
